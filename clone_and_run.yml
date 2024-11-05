@@ -1,0 +1,95 @@
+---
+- name: Clone repository and run script on collector
+  hosts: localhost
+  tasks:
+    - name: Clone GitHub repository
+      ansible.builtin.git:
+        repo: "https://github.com/anydetect/anydetect.git"
+        dest: "/tmp/anydetect"
+
+    - name: Copy repository to collector container
+      ansible.builtin.copy:
+        src: "/tmp/anydetect/"
+        dest: "/opt/anydetect/"
+      delegate_to: collector
+
+- name: Install Python on collector
+  hosts: collector
+  tasks:
+    - name: Update package index
+      apk:
+        update_cache: yes
+
+    - name: Install required packages for building Python
+      apk:
+        name:
+          - build-base
+          - libffi-dev
+          - openssl-dev
+          - bzip2-dev
+          - zlib-dev
+          - readline-dev
+          - sqlite-dev
+          - ncurses-dev
+          - xz-dev
+          - tk-dev
+          - linux-headers
+          - wget
+          - tar  # Использование стандартного tar
+          - unzip
+          - gcc
+          - g++
+          - musl-dev
+          - python3-dev
+          - libc6-compat
+          - make
+          - cmake  # Добавлено для сборки xgboost
+        state: present
+
+    - name: Download Python 3.10.0 source
+      ansible.builtin.get_url:
+        url: https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tar.xz
+        dest: /tmp/Python-3.10.0.tar.xz
+
+    - name: Extract Python source
+      ansible.builtin.unarchive:
+        src: /tmp/Python-3.10.0.tar.xz
+        dest: /tmp
+        remote_src: yes
+
+    - name: Compile and install Python 3.10
+      ansible.builtin.shell: "./configure --enable-optimizations && make && make install"
+      args:
+        chdir: /tmp/Python-3.10.0
+
+    - name: Verify Python version
+      ansible.builtin.command: python3.10 --version
+      register: python_version
+      ignore_errors: yes
+
+    - name: Display installed Python version
+      ansible.builtin.debug:
+        msg: "{{ python_version.stdout }}"
+
+    - name: Ensure pip is installed
+      command: python3 -m ensurepip --upgrade
+
+    - name: Update pip
+      command: pip3 install --upgrade pip
+
+    - name: Install requirements from requirements.txt
+      command: "pip3 install -r /opt/anydetect/requirements.txt"
+      delegate_to: collector
+
+    - name: Run Python script inside collector
+      command: "python3 /opt/anydetect/any_detect.py"
+      delegate_to: collector
+
+    - name: Display Python script logs
+          command: cat /opt/anydetect/logs/script.log
+      delegate_to: collector
+      register: python_script_logs
+
+    - name: Display collected logs
+      debug:
+        msg: "{{ python_script_logs.stdout }}"

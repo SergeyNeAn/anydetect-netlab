@@ -1,0 +1,17 @@
+- name: Install and configure softflowd on Alpine
+  hosts: switch
+  become: yes
+
+  tasks:
+    - name: Install softflowd
+      apk:
+        name: softflowd
+        state: present
+
+    - name: Copy softflowd configuration
+      copy:
+        src: softflowd.conf  # Path to your configuration file
+        dest: /etc/softflowd.conf
+
+    - name: Start softflowd as background process
+      command: "softflowd -i any -n 192.168.121.200:9996 -c /etc/softflowd.conf"

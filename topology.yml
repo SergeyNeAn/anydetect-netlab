@@ -1,0 +1,27 @@
+provider: clab
+defaults:
+  device: linux  # Default device type applied to all nodes
+
+nodes:
+  router:
+    device: linux
+  firewall:
+    device: linux
+  switch:
+    device: linux
+  employee_pc1:
+    device: linux
+  employee_pc2:
+    device: linux
+  server:
+    device: linux
+  collector:
+    device: linux
+links:
+  - router-firewall
+  - firewall-switch
+  - switch-employee_pc1
+  - switch-employee_pc2
+  - switch-server
+  - switch-collector
+
