@@ -1,7 +1,6 @@
 # Netlab Installation Guide
 
-## Step 1: Check and Install pip on Ubuntu
-
+Step 1: Check and Install pip on Ubuntu
 First, ensure that pip is installed. You can check if it is already installed by running:
 bash
 pip --version
